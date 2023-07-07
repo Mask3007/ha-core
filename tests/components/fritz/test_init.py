@@ -7,6 +7,7 @@ from homeassistant.components.device_tracker import (
     CONF_CONSIDER_HOME,
     DEFAULT_CONSIDER_HOME,
 )
+from homeassistant.components.fritz import common
 from homeassistant.components.fritz.const import (
     DOMAIN,
     FRITZ_AUTH_EXCEPTIONS,
@@ -103,3 +104,26 @@ async def test_setup_fail(hass: HomeAssistant, error) -> None:
         await hass.async_block_till_done()
 
     assert entry.state == ConfigEntryState.SETUP_RETRY
+
+
+@pytest.mark.parametrize(
+    ("version", "expected"),
+    [
+        ("154.07.55", "7.55"),
+        ("7.55", "7.55"),
+        ("07.55", "7.55"),
+        ("154", "154"),
+        ("0001.123a", "1.123a"),
+        ("", ""),
+        ("2", "2"),
+        (".2", ".2"),
+        ("1.2.3.4", "3.4"),
+        (None, None),
+    ],
+)
+async def test_version_truncating(version: str, expected: str) -> None:
+    """Test truncating the version to the two last parts."""
+
+    trunced_version = common._truncate_version(version)
+
+    assert trunced_version == expected

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import partial
 import logging
+import re
 from types import MappingProxyType
 from typing import Any, TypedDict, cast
 
@@ -53,6 +54,7 @@ from .const import (
     SERVICE_REBOOT,
     SERVICE_RECONNECT,
     SERVICE_SET_GUEST_WIFI_PW,
+    TRUNCATE_VERSION_REGEX,
     MeshRoles,
 )
 
@@ -143,6 +145,14 @@ class UpdateCoordinatorDataType(TypedDict):
 
     call_deflections: dict[int, dict]
     entity_states: dict[str, StateType | bool]
+
+
+def _truncate_version(version: str | None) -> str | None:
+    """Trunc version to two last parts."""
+    if version is None:
+        return None
+    match = re.search(TRUNCATE_VERSION_REGEX, version)
+    return match.group() if match is not None else version
 
 
 class FritzBoxTools(
@@ -314,12 +324,12 @@ class FritzBoxTools(
         """Return current SW version."""
         if not self._current_firmware:
             raise ClassSetupMissing()
-        return self._current_firmware
+        return _truncate_version(self._current_firmware) or self.current_firmware
 
     @property
     def latest_firmware(self) -> str | None:
         """Return latest SW version."""
-        return self._latest_firmware
+        return _truncate_version(self._latest_firmware)
 
     @property
     def update_available(self) -> bool:
